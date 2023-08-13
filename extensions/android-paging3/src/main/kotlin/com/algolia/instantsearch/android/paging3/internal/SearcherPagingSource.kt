@@ -19,7 +19,14 @@ internal class SearcherPagingSource<T : Any>(
 ) : PagingSource<Int, T>() {
 
     override fun getRefreshKey(state: PagingState<Int, T>): Int {
-        return 0 // on refresh (for new query), start from the first page (number zero)
+        //return 0 // on refresh (for new query), start from the first page (number zero)
+        // We need to get the previous key (or next key if previous is null) of the page
+        // that was closest to the most recently accessed index.
+        // Anchor position is the most recently accessed index
+        return state.anchorPosition?.let { anchorPosition ->
+            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
+                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+        } ?: 0
     }
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, T> {
